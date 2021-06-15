@@ -1,0 +1,156 @@
+#Processamento de video
+
+##init
+"""
+
+import numpy as np
+import random
+import cv2 as cv
+import matplotlib.pyplot as plt
+from google.colab.patches import cv2_imshow as show
+from google.colab import drive
+from IPython.display import HTML
+from base64 import b64encode
+drive.mount('/content/drive')
+
+"""## Teste 1 - open image
+
+"""
+
+img = cv.imread('/content/drive/MyDrive/processamento_de_video/camisetas.png')
+height, width, channels = img.shape
+print("height: ", height, "width: ", width, "channels: ", channels)
+show(img)
+
+img2 = cv.imread('/content/drive/MyDrive/processamento_de_video/imgs_lab1.png')
+height3, width3, channels3 = img2.shape
+print("height: ", height3, "width: ", width3, "channels: ", channels3)
+show(img2)
+
+
+
+"""#Teste 2 - Grayscale
+
+OpenCV fornece mecanismos de exibição de imagem em tons de cinza. Mas, acho importante ressaltar a existência e o cálculo por trás de várias técnicas. As principais: os tons de cinza gerados pela média dos valores dos canais e os tons de cinza gerados pelo máximo entre eles.
+"""
+
+grayMean = img.copy()
+grayMax = img.copy()
+grayMin = img.copy()
+grayR = img.copy()
+grayG = img.copy()
+grayB = img.copy()
+
+for i, lin in enumerate(img):
+    for j, pix in enumerate(lin):
+        grayMean[i][j] = pix.sum()/3
+        grayMax[i][j] = pix.max()
+        grayMin[i][j] = pix.min()
+        grayR[i][j] = pix[2]
+        grayG[i][j] = pix[1]
+        grayB[i][j] = pix[0]
+
+print ("\ngrayscale média")
+show(grayMean)
+
+print ("\ngrayscale max")
+show(grayMax)
+
+print ("\ngrayscale min")
+show(grayMin)
+
+print ("\ngrayscale canal vermelho")
+show(grayR)
+
+print ("\ngrayscale canal verde")
+show(grayG)
+
+print ("\ngrayscale canal azul")
+show(grayB)
+
+"""Repare que
+Na imagem com os tons de cinza baseada em média, as camisetas parecem ser da mesma tonalidade (a média entre elas); Na imagem com tons baseada em máximo, a iluminação é privilegiada; Na baseada em mínimos, os traços de pele negra ficam ressaltados, mesmo o modelo sendo pardo; Na baseada em vermelhos a camiseta parece ser branca, pois o vermelho dela é puro em contraste com a camiseta azul e a verde, que eram misturas.
+
+Cada uma dessas técnicas de converção para grayscale (dentre outras) pode ser usada a depender do que se quer destacar na imagem.
+"""
+
+
+
+"""#Teste 3 - Resize
+
+OpenCV fornece mecanismos de exibição de imagem em diferentes resoluções e, dado que o python interpretado pelo colab não é adequado para grandes quantidades de cálculo, convém utilizar otimizações nos algoritmos implementados em openCV
+"""
+
+imgRes1 = cv.resize(img2, (int(width3/2), int(height3/2))) 
+print ("simplesmente reduzindo proporcionalmente largura e altura originais em 50%")
+show(imgRes1)
+
+"""Atento ao fato que a nova resolução deve ser uma tupla de inteiros.
+Desta forma, podemos inclusive escolher valores que não respeitem a razão do aspecto da imagem (aspectratio).
+"""
+
+imgRes2 = cv.resize(img2, (int(width3/5), int(height3/3))) 
+print ("Reduzindo a imagem de forma não proporcional")
+show(imgRes2)
+
+
+
+"""Métodos de interpolação durante o redimensinoamento determinam a forma de como obter imagens maiores a partir da informação contida na imagem original. Geralmente utiliza-se polinômios ou outros métodos de regressão matemática que, teoricamente, interferem no tempo de execussão do código. Infelizmente, os testes dos diferentes parâmetros da função nesta plataforma não resultou em nenhuma diferença perceptível de tempo e de qualidade visual. """
+
+imgRes3 = cv.resize(img2, (int(width3*2), int(height3*2)), cv.INTER_NEAREST) 
+print ("teste de métodos de interpolação e tempo de execução")
+show(imgRes3)
+
+
+
+"""#Teste 4 - Videos
+
+## Exibição em HTML
+Edições de video costumam consumir muitos recursos. Esta talvez não seja a melhor plataforma para obtenção de produção e efeitos em tempo real. Mas, nos esforçaremos para obter ao menos os resultados teóricos.
+"""
+
+video = open('/content/drive/MyDrive/processamento_de_video/video_elsio1.mp4', 'rb').read()
+vidDec = "data:video/mp4;base64," + b64encode(video).decode()
+HTML(f'<video width=180 controls><source src= {vidDec} type="video/mp4"></video>')
+
+#height2, width2, channels2 = img2.shape
+#print(f'height: {height2}, width: {width2}, channels: {channels2}')
+#show(img2)
+
+video = open('/content/drive/MyDrive/processamento_de_video/video_arthur.mp4', 'rb').read()
+vidDec = "data:video/mp4;base64," + b64encode(video).decode()
+HTML(f'<video width=360 controls><source src= {vidDec} type="video/mp4"></video>')
+
+#height2, width2, channels2 = img2.shape
+#print(f'height: {height2}, width: {width2}, channels: {channels2}')
+#show(img2)
+
+"""## Captura de video pelo colab
+
+Para ter acesso aos frames do video, precisamos fazer uma captura, neste caso, do video elsioMini.mp4 e gravaremos as modificações em teste1.mp4
+"""
+
+cap = cv.VideoCapture('/content/drive/MyDrive/((UFABC))/(proc video)/elsioMini.mp4')
+codec = cv.VideoWriter_fourcc(*'MJPG')
+saida = cv.VideoWriter('/content/drive/MyDrive/((UFABC))/(proc video)/teste2.mp4', codec, 25.0, (322,156))
+
+x = 0
+
+while cap.isOpened():
+    ret, frame = cap.read()
+    if ret and x < 100:
+        x = x + 1
+
+        newframe = cv.resize(frame, (162,78))
+        saida.write(newframe)
+
+        show(newframe) # isso exibiria todos os frames no scrool da página
+    else:
+        saida.release()
+        break
+
+cap.release()
+#saida.release()
+
+import os
+os.system('jupyter nbconvert --execute --to html procVideoLab1.ipynb')
